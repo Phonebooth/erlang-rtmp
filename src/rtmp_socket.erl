@@ -292,7 +292,7 @@ wait_for_socket_on_server({socket, Socket}, #rtmp_socket{} = State) when is_pid(
 -spec(wait_for_socket_on_client(Message::any(), Socket::rtmp_socket()) -> no_return()).
 
 wait_for_socket_on_client({socket, Socket}, #rtmp_socket{} = State) ->
-  inet:setopts(Socket, [{active, once}, {packet, raw}, binary]),
+  inet:setopts(Socket, [{active, once}, {packet, raw}, {nodelay, true}, binary]),
   {ok, {IP, Port}} = inet:peername(Socket),
   State1 = State#rtmp_socket{socket = Socket, address = IP, port = Port},
   send_data(State1, [?HS_HEADER, rtmp_handshake:c1()]),
@@ -467,10 +467,11 @@ handle_info({tcp, Socket, Data}, handshake_c3, #rtmp_socket{socket=Socket, buffe
 handle_info({tcp, Socket, Data}, handshake_c3, #rtmp_socket{socket=Socket, consumer = Consumer, buffer = Buffer, bytes_read = BytesRead, active = Active} = State) ->
   <<_HandShakeC3:?HS_BODY_LEN/binary, Rest/binary>> = <<Buffer/binary, Data/binary>>,
   Consumer ! {rtmp, self(), connected},
-  case Active of
-    true -> inet:setopts(Socket, [{active, true}]);
-    _ -> ok
-  end,
+  inet:setopts(Socket, [{active, true}, {nodelay, true}]),
+  % case Active of
+  %     true -> inet:setopts(Socket, [{active, true}, {nodelay, true}]);
+  %   _ -> inet:setopts(Socket, [{nodelay, true}])
+  % end,
   {next_state, loop, handle_rtmp_data(State#rtmp_socket{bytes_read = BytesRead + size(Data)}, Rest), ?RTMP_TIMEOUT};
 
 handle_info({tcp, Socket, Data}, handshake_s1, #rtmp_socket{socket=Socket, buffer = Buffer, bytes_read = BytesRead} = State) when size(Buffer) + size(Data) < ?HS_BODY_LEN*2 + 1 ->
