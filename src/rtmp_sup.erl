@@ -44,85 +44,105 @@
 %%--------------------------------------------------------------------
 -spec start_link() -> {'error',_} | {'ok',pid()}.
 start_link() ->
-	supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 start_rtmpt(SessionID, IP) -> supervisor:start_child(rtmpt_session_sup, [SessionID, IP]).
 start_rtmp_socket(Type) -> supervisor:start_child(rtmp_socket_sup, [Type]).
 
 
 start_rtmp_listener(Port, Name, Callback) ->
-  Listener = {
-    Name,
-    {rtmp_listener, start_link ,[Port, Name, Callback]},
-    permanent,
-    10000,
-    worker,
-    [rtmp_listener]
-  },
-  supervisor:start_child(?MODULE, Listener).
+    Listener = {
+        Name,
+        {rtmp_listener, start_link ,[Port, Name, Callback]},
+        permanent,
+        10000,
+        worker,
+        [rtmp_listener]
+    },
+    supervisor:start_child(?MODULE, Listener).
 
 
 init([rtmp_socket]) ->
-  {ok,
-    {{simple_one_for_one, 5, 60},
-      [
-        {   undefined,                               % Id       = internal id
-            {rtmp_socket,start_link,[]},             % StartFun = {M, F, A}
-            temporary,                               % Restart  = permanent | transient | temporary
-            2000,                                    % Shutdown = brutal_kill | int() >= 0 | infinity
-            worker,                                  % Type     = worker | supervisor
-            []                            % Modules  = [Module] | dynamic
+    {ok,
+        {{simple_one_for_one, 5, 60},
+            [
+                {   undefined,                      % Id       = internal id
+                    {rtmp_socket,start_link,[]},    % StartFun = {M, F, A}
+                    temporary,                      % Restart  = permanent | transient | temporary
+                    2000,                           % Shutdown = brutal_kill | int() >= 0 | infinity
+                    worker,                         % Type     = worker | supervisor
+                    []                              % Modules  = [Module] | dynamic
+                }
+            ]
         }
-      ]
-    }
-  };
+    };
 
 init([rtmpt_session]) ->
-  {ok,
-    {{simple_one_for_one, 5, 60},
-      [
-        {   undefined,                               % Id       = internal id
-            {rtmpt,start_link,[]},             % StartFun = {M, F, A}
-            temporary,                               % Restart  = permanent | transient | temporary
-            2000,                                    % Shutdown = brutal_kill | int() >= 0 | infinity
-            worker,                                  % Type     = worker | supervisor
-            []                            % Modules  = [Module] | dynamic
+    {ok,
+        {{simple_one_for_one, 5, 60},
+            [
+                {   undefined,                      % Id       = internal id
+                    {rtmpt,start_link,[]},          % StartFun = {M, F, A}
+                    temporary,                      % Restart  = permanent | transient | temporary
+                    2000,                           % Shutdown = brutal_kill | int() >= 0 | infinity
+                    worker,                         % Type     = worker | supervisor
+                    []                              % Modules  = [Module] | dynamic
+                }
+            ]
         }
-      ]
-    }
-  };
+    };
 
 
 init([]) ->
-  Supervisors = [
-    {rtmpt_sessions_sup,                       % Id       = internal id
-      {rtmpt_sessions,start_link,[]},          % StartFun = {M, F, A}
-      permanent,                               % Restart  = permanent | transient | temporary
-      2000,                                    % Shutdown = brutal_kill | int() >= 0 | infinity
-      worker,                                  % Type     = worker | supervisor
-      [rtmpt_sessions]                         % Modules  = [Module] | dynamic
-    },
-    {rtmpt_session_sup,
-      {supervisor,start_link,[{local, rtmpt_session_sup}, ?MODULE, [rtmpt_session]]},
-      permanent,                               % Restart  = permanent | transient | temporary
-      infinity,                                % Shutdown = brutal_kill | int() >= 0 | infinity
-      supervisor,                              % Type     = worker | supervisor
-      []                                       % Modules  = [Module] | dynamic
-    },
-    {rtmp_socket_sup,
-      {supervisor,start_link,[{local, rtmp_socket_sup}, ?MODULE, [rtmp_socket]]},
-      permanent,                               % Restart  = permanent | transient | temporary
-      infinity,                                % Shutdown = brutal_kill | int() >= 0 | infinity
-      supervisor,                              % Type     = worker | supervisor
-      []                                       % Modules  = [Module] | dynamic
-    },
-    {rtmp_monitor_sup,                         % Id       = internal id
-      {rtmp_monitor,start_link,[[{timeout,1000},{threshold,80*60}]]},            % StartFun = {M, F, A}
-      permanent,                               % Restart  = permanent | transient | temporary
-      2000,                                    % Shutdown = brutal_kill | int() >= 0 | infinity
-      worker,                                  % Type     = worker | supervisor
-      [rtmp_monitor]                           % Modules  = [Module] | dynamic
-    }
-  ],
-  
-  {ok, {{one_for_one, 3, 10}, Supervisors}}.
+    Supervisors = [
+        {rtmpt_sessions_sup,                         % Id       = internal id
+            {rtmpt_sessions,start_link,[]},          % StartFun = {M, F, A}
+            permanent,                               % Restart  = permanent | transient | temporary
+            2000,                                    % Shutdown = brutal_kill | int() >= 0 | infinity
+            worker,                                  % Type     = worker | supervisor
+            [rtmpt_sessions]                         % Modules  = [Module] | dynamic
+        },
+        {rtmpt_session_sup,
+            {supervisor,start_link,
+                [{local, rtmpt_session_sup}, ?MODULE, [rtmpt_session]]},
+            permanent,                               % Restart  = permanent | transient | temporary
+            infinity,                                % Shutdown = brutal_kill | int() >= 0 | infinity
+            supervisor,                              % Type     = worker | supervisor
+            []                                       % Modules  = [Module] | dynamic
+        },
+        {rtmp_socket_sup,
+            {supervisor,start_link,
+                [{local, rtmp_socket_sup}, ?MODULE, [rtmp_socket]]},
+            permanent,                               % Restart  = permanent | transient | temporary
+            infinity,                                % Shutdown = brutal_kill | int() >= 0 | infinity
+            supervisor,                              % Type     = worker | supervisor
+            []                                       % Modules  = [Module] | dynamic
+        },
+        {rtmp_monitor_sup,                           % Id       = internal id
+            {rtmp_monitor,start_link,
+                [[{timeout,1000},{threshold,80*60}]]},            % StartFun = {M, F, A}
+            permanent,                               % Restart  = permanent | transient | temporary
+            2000,                                    % Shutdown = brutal_kill | int() >= 0 | infinity
+            worker,                                  % Type     = worker | supervisor
+            [rtmp_monitor]                           % Modules  = [Module] | dynamic
+        }
+    ],
+    %% look in app config, if port and callback is configured... start rtmp_listener now
+    %% instead of relying on rtmp_socket:start_server/3 to be called
+    Specs = case application:get_env(rtmp, rtmp_callback) of
+        {Port, Name, Callback} ->
+            Listener = {
+                Name,
+                {rtmp_listener, start_link ,[Port, Name, Callback]},
+                permanent,
+                10000,
+                worker,
+                [rtmp_listener]
+            },
+            error_logger:info_msg("Starting rtmp_listener named ~p on port ~p, "
+                "with callback module ~p", [Port, Name, Callback]),
+            [Supervisors | Listener];
+        _ ->
+            Supervisors
+    end,
+    {ok, {{one_for_one, 3, 10}, Specs}}.

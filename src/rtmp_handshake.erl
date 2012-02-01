@@ -198,16 +198,17 @@ clientDigest(<<_:8/binary, P1, P2, P3, P4, _/binary>> = C1, version1) ->
 	<<First:Offset/binary, Seed:32/binary, Last/binary>> = C1,
   {First, Seed, Last}.
 
--spec dhKey(Handshake::binary(), handshake_version()) -> {First::binary(), Seed::binary(), Last::binary()}.
-dhKey(<<_:1532/binary, P1, P2, P3, P4, _/binary>> = C1, version1) ->
-	Offset = (P1+P2+P3+P4) rem 632 + 772,
-	<<First:Offset/binary, Seed:32/binary, Last/binary>> = C1,
-  {First, Seed, Last};
-
-dhKey(<<_:768/binary, P1, P2, P3, P4, _/binary>> = C1, version1) ->
-	Offset = (P1+P2+P3+P4) rem 632 + 8,
-	<<First:Offset/binary, Seed:32/binary, Last/binary>> = C1,
-  {First, Seed, Last}.
+%% commenting out since it's not used to remove compiler warning
+% -spec dhKey(Handshake::binary(), handshake_version()) -> {First::binary(), Seed::binary(), Last::binary()}.
+% dhKey(<<_:1532/binary, P1, P2, P3, P4, _/binary>> = C1, version1) ->
+% 	Offset = (P1+P2+P3+P4) rem 632 + 772,
+% 	<<First:Offset/binary, Seed:32/binary, Last/binary>> = C1,
+%   {First, Seed, Last};
+% 
+% dhKey(<<_:768/binary, P1, P2, P3, P4, _/binary>> = C1, version1) ->
+% 	Offset = (P1+P2+P3+P4) rem 632 + 8,
+% 	<<First:Offset/binary, Seed:32/binary, Last/binary>> = C1,
+%   {First, Seed, Last}.
 
 -spec validateClientScheme(C1::binary()) -> handshake_version().
 validateClientScheme(C1) ->

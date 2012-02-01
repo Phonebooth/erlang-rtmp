@@ -464,7 +464,7 @@ handle_info({tcp, Socket, Data}, handshake_c3, #rtmp_socket{socket=Socket, buffe
   activate_socket(Socket),
   {next_state, handshake_c3, State#rtmp_socket{buffer = <<Buffer/binary, Data/binary>>, bytes_read = BytesRead + size(Data)}, ?RTMP_TIMEOUT};
   
-handle_info({tcp, Socket, Data}, handshake_c3, #rtmp_socket{socket=Socket, consumer = Consumer, buffer = Buffer, bytes_read = BytesRead, active = Active} = State) ->
+handle_info({tcp, Socket, Data}, handshake_c3, #rtmp_socket{socket=Socket, consumer = Consumer, buffer = Buffer, bytes_read = BytesRead, active = _Active} = State) ->
   <<_HandShakeC3:?HS_BODY_LEN/binary, Rest/binary>> = <<Buffer/binary, Data/binary>>,
   Consumer ! {rtmp, self(), connected},
   inet:setopts(Socket, [{active, true}, {nodelay, true}]),
